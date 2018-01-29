@@ -1,5 +1,5 @@
 {
-  "name": "granule",
+  "name": "@brudil/granule",
   "version": "0.1.0",
   "main": "dist/index.js",
   "module": "dist/index.es.js",
@@ -26,6 +26,7 @@
     "unfetch": "^3.0.0"
   },
   "scripts": {
+    "prepare": "tsc --outDir dist && microbundle",
     "build": "microbundle",
     "dev": "microbundle watch",
     "test": "jest"
