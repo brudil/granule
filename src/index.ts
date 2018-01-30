@@ -1,6 +1,35 @@
 import React from 'react';
 import { print } from 'graphql/language/printer';
-import { GranelProps, GranelState, StoreUpdater, IStore } from './types';
+
+export interface GranuleState {
+  loading: boolean;
+}
+
+export interface IStore {
+  getState(): any;
+  setState(nextState: any): any;
+}
+
+export interface GranuleProps {
+  children(props: GranuleChildProps<any>): any;
+  endpoint: string;
+  query: any;
+  variables?: Object;
+  fetchMore?(variables: any, props: GranuleChildProps<any>): Object;
+  storeUpdater?(nextData: any, currentData: any): any;
+  store: IStore;
+}
+
+export interface StoreUpdater {
+  (nextData: any, store: any): any;
+}
+
+export interface GranuleChildProps<D> {
+  refetch(): void;
+  fetchMore(variables: Object, storeUpdater: StoreUpdater): void;
+  data: D;
+  loading: boolean;
+}
 
 const defaultStoreUpdater: StoreUpdater = (nextData: any) => nextData;
 
@@ -13,15 +42,15 @@ export function createStore(): IStore {
   }
 }
 
-export class Granule extends React.Component<GranelProps, GranelState> {
-  constructor(props: GranelProps) {
+export class Granule extends React.Component<GranuleProps, GranuleState> {
+  constructor(props: GranuleProps) {
     super(props);
     this.state = {
-      loading: this.selectQueryFromState() === null,
+      loading: !this.selectQueryFromState(),
     }
   }
 
-  performFetch(variables: Object) {
+  private performFetch(variables: Object) {
     return fetch(
       this.props.endpoint,
       {
@@ -34,19 +63,17 @@ export class Granule extends React.Component<GranelProps, GranelState> {
           variables,
         })
       }
-    ).then(res => {
-      return res.json()
-    });
+    ).then(res => res.json());
   }
 
-  fetchMore() {
+  private fetchMore() {
     if (!this.props.fetchMore) return;
 
     const nextVariables = this.props.fetchMore(this.props.variables, this.getChildProps());
 
-    this.performFetch.call(this, nextVariables)
+    this.performFetch(nextVariables)
       .then((result: any) => {
-        this.props.store.setState((state: GranelState) => ({
+        this.props.store.setState((state: GranuleState) => ({
           ...state,
           [this.getStoreKey()]: (this.props.storeUpdater || defaultStoreUpdater)(result.data, this.selectQueryFromState())
         }));
@@ -57,27 +84,22 @@ export class Granule extends React.Component<GranelProps, GranelState> {
   componentDidMount() {
     if (this.selectQueryFromState() !== null) return;
 
-    this.performFetch.call(this, this.props.variables)
+    this.performFetch(this.props.variables || {})
       .then((result: any) => {
         this.props.store.setState((store: any) => ({ ...store, [this.getStoreKey()]: result.data}));
         this.setState({ loading: false })
       });
   }
 
-  getStoreKey() {
-    return `${this.props.query.definitions[0].name.value}||${JSON.stringify(this.props.variables)}`;
+  private getStoreKey() {
+    return JSON.stringify([this.props.query.definitions[0].name.value, this.props.variables]);
   }
 
   private selectQueryFromState() {
-    const state = this.props.store.getState();
-
-    const queryContainer = state[this.getStoreKey()];
-    if (!queryContainer) return null;
-
-    return queryContainer;
+    return this.props.store.getState()[this.getStoreKey()] || null;
   }
 
-  getChildProps() {
+  private getChildProps() {
     return {
       refetch: this.performFetch.bind(this),
       data: this.selectQueryFromState(),

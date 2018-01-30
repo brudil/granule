@@ -1,18 +1,16 @@
-export interface GranelData<D> {
+export interface GranuleChildProps<D> {
   refetch(): void;
   fetchMore(variables: Object, storeUpdater: StoreUpdater): void;
   data: D;
   loading: boolean;
 }
 
-export interface GranelState {
+export interface GranuleState {
   loading: boolean;
 }
 
-export type GraphQlAst = any;
-
 export interface GranuleRender<D> {
-  (props: GranelData<D>): any;
+  (props: GranuleChildProps<D>): any;
 }
 
 export interface IStore {
@@ -20,12 +18,12 @@ export interface IStore {
   setState(nextState: any): any;
 }
 
-export interface GranelProps {
-  children(data: GranelData<any>): any;
+export interface GranuleProps {
+  children(props: GranuleChildProps<any>): any;
   endpoint: string;
-  query: GraphQlAst
+  query: any;
   variables?: Object;
-  fetchMore?(variables: any, props: GranelData<any>): Object;
+  fetchMore?(variables: any, props: GranuleChildProps<any>): Object;
   storeUpdater?(nextData: any, currentData: any): any;
   store: IStore;
 }

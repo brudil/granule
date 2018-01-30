@@ -9,7 +9,7 @@
       "es2017"
     ],
     "jsx": "react",
-    "target": "es3",
+    "target": "es5",
     "module": "esnext",
     "moduleResolution": "node",
     "strict": true,
